@@ -10,9 +10,9 @@ jobs:
       - checkout
       - node/install-packages:
           pkg-manager: npm
-      - run:
-          name: Installing dependencies
-          command: npm install
+      - run: |
+          echo "Installing dependencies..."
+          npm install
   test:
     docker:
       - image: cimg/node:16.10
@@ -20,24 +20,24 @@ jobs:
       - checkout
       - node/install-packages:
           pkg-manager: npm
-      - run:
-          name: Running tests
-          command: npm run test
+      - run: |
+          echo "Running tests..."
+          npm run test
   publish:
-    docker:
-      - image: cimg/node:16.10
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Building Docker image
-          command: docker build -t acetay/m4-node-app-for-devops:v1.0.0 .
-      - run:
-          name: Log in to Docker Hub
-          command: docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
-      - docker/push:
-          image: acetay/m4-node-app-for-devops
-          tag: v1.0.0
+  docker:
+    - image: cimg/node:16.10
+  steps:
+    - checkout
+    - setup_remote_docker
+    - run: |
+        echo "Building Docker image..."
+        docker build -t acetay/m4-node-app-for-devops:v1.0.0 .
+    - run: |
+        echo "Logging in to Docker Hub..."
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_LOGIN" --password-stdin
+    - docker/push:
+        image: acetay/m4-node-app-for-devops
+        tag: v1.0.0
 
 workflows:
   simple_workflow:
