@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   node: circleci/node@5.0.1
+  docker: circleci/docker@2.2.0
 jobs:
   build:
     docker:
@@ -22,6 +23,20 @@ jobs:
       - run: |
           echo "Running tests..."
           npm run test
+  publish:
+    docker:
+      - image: cimg/node:16.10
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run : |
+          echo "Building Docker image..."
+          docker build -t acetay/m4-node-app-for-devops:v1.0.0 .
+      - docker/push:
+          image: acetay/m4-node-app-for-devops
+          tag: v1.0.0
+          username: DOCKERHUB_USERNAME
+          password: DOCKERHUB_PASSWORD
 
 workflows:
   simple_workflow:
@@ -30,3 +45,6 @@ workflows:
       - test:
           requires:
             - build
+      - publish:
+          requires:
+            - test
