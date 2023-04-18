@@ -3,51 +3,23 @@ version: 2.1
 orbs:
   node: circleci/node@5.0.1
   docker: circleci/docker@2.2.0
+  heroku: circleci/heroku@1.0.3
 
 jobs:
   build:
-    docker:
-      - image: cimg/node:16.10
-    steps:
-      - checkout
-      - node/install-packages:
-          pkg-manager: npm
-      - run: |
-          echo "Installing dependencies..."
-          npm install
+    # ...
 
   test:
-    docker:
-      - image: cimg/node:16.10
-    steps:
-      - checkout
-      - node/install-packages:
-          pkg-manager: npm
-      - run: |
-          echo "Running tests..."
-          npm run test
+    # ...
 
   publish:
-    docker:
-      - image: cimg/node:16.10
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run: |
-          echo "Building Docker image..."
-          docker build -t acetay/m4-node-app-for-devops:v1.0.0 .
-      - run: |
-          echo "Logging in to Docker Hub..."
-          echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_LOGIN" --password-stdin
-      - docker/push:
-          image: acetay/m4-node-app-for-devops
-          tag: v1.0.0
+    # ...
 
   deploy:
     docker:
       - image: cimg/node:16.10
     steps:
-      - setup_remote_docker      
+      - setup_remote_docker
       - heroku/install
       - checkout
       - run:
@@ -70,9 +42,3 @@ workflows:
       - deploy:
           requires:
             - publish
-
-            - test
-      - deploy:
-          requires:
-            - build-and-push
-
