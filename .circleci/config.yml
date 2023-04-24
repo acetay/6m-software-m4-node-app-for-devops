@@ -5,6 +5,7 @@ orbs:
   node: circleci/node@5.0.1
   docker: circleci/docker@2.1.4
   heroku: circleci/heroku@2.0.0
+  snyk: snyk/snyk@1.5.0
 
 #build job specifies the Docker image to use and defines the steps to be executed. It checks out the code, installs packages, and installs dependencies using npm.
 
@@ -32,6 +33,19 @@ jobs:
       - run: |
           echo "Running tests..."
           npm run test
+          
+    scan:
+        docker:
+            - image: cimg/node:16.10
+        environment:
+            IMAGE_NAME: acetay/m4-node-app-for-devops
+        steps:
+            - checkout
+            - setup_remote_docker      
+            - docker/check
+            - run: docker build -t $IMAGE_NAME .
+            - snyk/scan: 
+                docker-image-name: $IMAGE_NAME
   
   #build-and-push job uses the Docker executor, sets up a remote Docker environment, checks out the code, builds a Docker image with a specific tag, and pushes the image to the Docker registry.
 
@@ -81,6 +95,12 @@ workflows:
           filters:
             branches:
               only: main     
+      - scan:
+          requires:
+            - build
+          filter:
+            branches:
+              only: main
       - build-and-push:  
           filters:
             tags:
