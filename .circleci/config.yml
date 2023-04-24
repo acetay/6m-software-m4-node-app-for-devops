@@ -106,4 +106,5 @@ workflows:
           requires:
             - build-and-push
           filters:
-            tags
+            tags:
+              only
