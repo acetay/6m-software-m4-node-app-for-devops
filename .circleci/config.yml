@@ -37,7 +37,8 @@ jobs:
             npm run test
 
   # test job specifies the Docker image and references the .test_definition YAML anchor
-  test: *test_definition
+  test:
+    <<: *test_definition
 
   # build-and-push job uses the Docker executor, sets up a remote Docker environment,
   # checks out the code, builds a Docker image with a specific tag, and pushes the image to the Docker registry
@@ -85,6 +86,7 @@ workflows:
       - test:
           requires:
             - build
+          <<: *test_definition
           filters:
             branches:
               only: main
@@ -104,7 +106,4 @@ workflows:
           requires:
             - build-and-push
           filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
+            tags
