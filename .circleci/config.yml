@@ -5,8 +5,6 @@ orbs:
   heroku: circleci/heroku@2.0.0
   snyk: snyk/snyk@1.5.0
 
-# build job specifies the Docker image to use and defines the steps to be executed
-# it checks out the code, installs packages, and installs dependencies using npm
 jobs:
   build:
     docker:
@@ -21,9 +19,7 @@ jobs:
             echo "Installing dependencies..."
             npm install
 
-  # define the test job as a YAML anchor, which can be reused elsewhere
-  # this defines the steps for the test job
-  .test_definition:
+  test:
     docker:
       - image: cimg/node:16.10
     steps:
@@ -36,12 +32,19 @@ jobs:
             echo "Running tests..."
             npm run test
 
-  # test job specifies the Docker image and references the .test_definition YAML anchor
-  test:
-    <<: *test_definition
+  scan:
+    docker:
+      - image: cimg/node:16.10
+    environment:
+      IMAGE_NAME: acetay/m4-node-app-for-devops
+    steps:
+      - checkout
+      - setup_remote_docker
+      - docker/check
+      - run: docker build -t $IMAGE_NAME .
+      - snyk/scan:
+          docker-image-name: $IMAGE_NAME
 
-  # build-and-push job uses the Docker executor, sets up a remote Docker environment,
-  # checks out the code, builds a Docker image with a specific tag, and pushes the image to the Docker registry
   build-and-push:
     executor: docker/docker
     steps:
@@ -55,8 +58,6 @@ jobs:
           image: acetay/m4-node-app-for-devops
           tag: <<pipeline.git.tag>>
 
-  # deploy job specifies the Docker image, sets up a remote Docker environment,
-  # installs the Heroku CLI, checks out the code, and pushes and releases the Heroku container
   deploy:
     docker:
       - image: cimg/node:16.10
@@ -71,11 +72,6 @@ jobs:
             heroku container:push web -a ace-su-devops
             heroku container:release web -a ace-su-devops
 
-# workflows section defines the pipeline structure and order of the jobs
-# it also sets up filters to control when specific jobs should run based on branch updates and Git tags
-# build and test jobs will only run when the main branch is updated
-# build-and-push and deploy jobs will only run when a Git tag is created that starts with the letter "v"
-# they will not run for any branch updates
 workflows:
   simple_workflow:
     jobs:
@@ -86,7 +82,6 @@ workflows:
       - test:
           requires:
             - build
-          <<: *test_definition
           filters:
             branches:
               only: main
@@ -107,4 +102,6 @@ workflows:
             - build-and-push
           filters:
             tags:
-              only
+              only: /^v.*/
+            branches:
+              ignore: /.*/
